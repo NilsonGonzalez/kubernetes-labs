@@ -1,0 +1,16 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: deployment-rollout-restart
+  namespace: demo-app
+  labels:
+    app.kubernetes.io/name: deployment-rollout-restart
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: deployment-rollout-restart
+subjects:
+  - kind: ServiceAccount
+    name: deployment-rollout-restart
+    namespace: demo-app
