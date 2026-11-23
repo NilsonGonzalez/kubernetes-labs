@@ -1,0 +1,71 @@
+# Deployments de prueba para validar CronJob deployment-rollout-restart (demo-a)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rollout-restart-test-a
+  namespace: demo-app
+  labels:
+    app.kubernetes.io/name: deployment-rollout-restart
+    app.kubernetes.io/component: test
+    app.kubernetes.io/part-of: rollout-restart-validation
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rollout-restart-test-a
+  template:
+    metadata:
+      labels:
+        app: rollout-restart-test-a
+      annotations:
+        sidecar.istio.io/inject: "false"
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: pause
+          image: registry.k8s.io/pause:3.9
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65534
+            seccompProfile:
+              type: RuntimeDefault
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rollout-restart-test-b
+  namespace: demo-app
+  labels:
+    app.kubernetes.io/name: deployment-rollout-restart
+    app.kubernetes.io/component: test
+    app.kubernetes.io/part-of: rollout-restart-validation
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rollout-restart-test-b
+  template:
+    metadata:
+      labels:
+        app: rollout-restart-test-b
+      annotations:
+        sidecar.istio.io/inject: "false"
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: pause
+          image: registry.k8s.io/pause:3.9
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65534
+            seccompProfile:
+              type: RuntimeDefault

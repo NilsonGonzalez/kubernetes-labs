@@ -1,0 +1,57 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: deployment-rollout-restart
+  namespace: demo-app
+  labels:
+    app.kubernetes.io/name: deployment-rollout-restart
+spec:
+  schedule: "46 15 * * *"
+  timeZone: America/Bogota
+  concurrencyPolicy: Forbid
+  suspend: false
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 300
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: "false"
+        spec:
+          serviceAccountName: deployment-rollout-restart
+          restartPolicy: Never
+          containers:
+            - name: kubectl
+              image: bitnami/kubectl:latest
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  NAMESPACE=demo-app
+                  CONFIG=/config/deployments.txt
+                  if ! grep -vE '^\s*#|^\s*$' "$CONFIG" | grep -q .; then
+                    echo "No hay deployments en ConfigMap deployment-rollout-restart-targets; nada que reiniciar."
+                    exit 0
+                  fi
+                  while IFS= read -r line || [ -n "$line" ]; do
+                    case "$line" in
+                      ''|\#*) continue ;;
+                      *'#'*) line="${line%%#*}" ;;
+                    esac
+                    dep=$(echo "$line" | tr -d '[:space:]')
+                    [ -z "$dep" ] && continue
+                    echo "rollout restart deployment/${dep} -n ${NAMESPACE}"
+                    kubectl -n "$NAMESPACE" rollout restart "deployment/${dep}"
+                  done < "$CONFIG"
+              volumeMounts:
+                - name: targets
+                  mountPath: /config
+                  readOnly: true
+          volumes:
+            - name: targets
+              configMap:
+                name: deployment-rollout-restart-targets
